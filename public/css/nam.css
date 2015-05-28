@@ -1,0 +1,48 @@
+h1.title {
+  font-family: georgia, serif;
+  font-size: 32px;
+  font-weight: bold;
+  margin: 15px 0 30px 0;
+}
+h1.title > a {
+  color: black;
+}
+p.body {
+  font-family: georgia, serif;
+  font-size: 17px;
+}
+h2.block-title {
+  font-weight: bold;
+  margin-top: 90px;
+}
+ul.articles > li {
+  border-bottom: 1px dotted #ccc;
+}
+ul.articles > li > a {
+  font-size: 16px;
+  color: #000;
+  font-weight: 200;
+  display: block;
+  padding: 6px 0 6px 10px;
+}
+ul.articles > li > a:hover {
+  color: #de5041;
+}
+a#back {
+  position: fixed;
+  top: 30px;
+  margin-left: -70px;
+  background-color: black;
+  border-radius: 44px;
+  display: block;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  line-height: 40px;
+  padding-top: 6px;
+}
+a#back > img {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
