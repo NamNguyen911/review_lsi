@@ -5,10 +5,14 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import simplejson as json
 import requests
-from gensim.utils import to_utf8
 
 cherrypy.server.socket_host = '0.0.0.0'
 cherrypy.engine.start()
+
+def to_utf8(text):
+    if isinstance(text, unicode):
+        return text.encode('utf8')
+    return unicode(text, 'utf8', errors='strict').encode('utf8')
 
 class RelatedArticle(object):
     def __init__(self):
@@ -97,8 +101,6 @@ class RelatedArticle(object):
         relevant_articles.sort(key=lambda x: x[1], reverse=True)
 
         formatter = "<li><a href='/article?_id={0}' target='_blank'>{1}-{2}</a></li>"
-        # relevant_content = "".join([formatter.format(a[0]['_id'], a[0]['title'], a[1])
-        #     for a in relevant_articles])
         relevant_content = "".join([formatter.format(a[0]['_id'], to_utf8(a[0]['title']), a[1])
             for a in relevant_articles])
         return relevant_content
