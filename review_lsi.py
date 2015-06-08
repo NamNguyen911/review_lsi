@@ -16,13 +16,13 @@ def to_utf8(text):
 
 class RelatedArticle(object):
     def __init__(self):
-        self._db = MongoClient('localhost').lion_relevant
+        self._db = MongoClient('localhost').lion_matcher
 
     @cherrypy.expose
     def index(self):
-        articles = self._db.articles.find().skip(10).limit(10)
-        formatter = '<li><a href="/article?_id={0}">{1}</a></li>'
-        items = "".join([formatter.format(a['_id'], a['title']) for a in articles])
+        links = self._db.link.find().limit(10)
+        formatter = '<li><a href="/link?link_id={0}">{1}</a></li>'
+        items = "".join([formatter.format(l['_id'], l['title']) for l in links])
         content = """
         <head>
             <title>Lion Relevant</title>
@@ -45,8 +45,8 @@ class RelatedArticle(object):
         return content
 
     @cherrypy.expose
-    def article(self, _id):
-        article = self._db.articles.find_one({'_id': ObjectId(_id)})
+    def link(self, link_id):
+        link = self._db.link.find_one({'_id': ObjectId(link_id)})
         item_formatter = """
         <h1 class='title'>
             <a href={0} target='_blank'>{1}</a>
@@ -54,8 +54,8 @@ class RelatedArticle(object):
         <p class='body'>{2} </p>
         """
         item = item_formatter.format(
-                article['url'], article['title'], article['body'])
-        related_content = self.get_relevant_content(article)
+                link['url'], link['title'], link['body'])
+        related_content = self.get_relevant_content(link)
         content = """
         <head>
             <title>Lion Relevant</title>
@@ -81,28 +81,46 @@ class RelatedArticle(object):
         """.format(item, related_content)
         return content
 
-    def get_relevant_score(self, article):
-        del article['_id']
-        article['is_article'] = False
-        headers = {'content-type': 'application/json'}
-        data = json.dumps(article)
-        res = requests.post('http://localhost/relevance',
-                data = data,
-                headers = headers)
-        scores = json.loads(res.text)
-        return scores
+    @cherrypy.expose
+    def content(self, content_id):
+        content = self._db.content.find_one({'_id': ObjectId(content_id)})
+        content = """
+        <head>
+            <title>Lion Relevant</title>
+            <link rel='stylesheet' href='static/css/gia.ui.css'>
+            <link rel='stylesheet' href='static/css/nam.css'>
+        </head>
+        <body>
+            <div class='ctn'>
+                <a href='/' id='back'><img src='static/img/back.png'></a>
+                <div class='rw'>
+                    <div class='cl md-8'>
+                        <h1 class='title'>
+                            <a href={0} target='_blank'>{1}</a>
+                        </h1>
+                        <p class='body'>{2}</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        """.format(content['url'], to_utf8(content['title']), content['body'])
+        return content
 
-    def get_relevant_content(self, article):
-        relevant_scores = self.get_relevant_score(article)
-        scores = dict(zip(relevant_scores['code'][:10], relevant_scores['score'][:10]))
+    def get_relevant_content(self, link):
+        relevance = link['relevance']
+        scores = dict(zip(relevance['code'][:10], relevance['score'][:10]))
 
-        relevant_articles = [(a, scores[a['url_hash']])
-            for a in self._db.articles.find({'url_hash': {'$in': scores.keys()}})]
-        relevant_articles.sort(key=lambda x: x[1], reverse=True)
+        contents = [(c, scores[c['url_hash']])
+            for c in self._db.content.find({'url_hash': {'$in': scores.keys()}})]
+        contents.sort(key=lambda x: x[1], reverse=True)
 
-        formatter = "<li><a href='/article?_id={0}' target='_blank'>{1}-{2}</a></li>"
-        relevant_content = "".join([formatter.format(a[0]['_id'], to_utf8(a[0]['title']), a[1])
-            for a in relevant_articles])
+        formatter = "<li><a href='/content?content_id={0}' target='_blank'>{1} {2}</a></li>"
+        relevant_content = "".join([formatter.format(c[0]['_id'], to_utf8(c[0]['title']), c[1])
+            for c in contents])
+
+        #formatter = "<li><a href='{0}' target='_blank'>{1}-{2}</a></li>"
+        #relevant_content = "".join([formatter.format(c[0]['url'], to_utf8(c[0]['title']), c[1])
+        #    for c in contents])
         return relevant_content
 
 
